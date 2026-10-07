@@ -18,7 +18,7 @@ const TAGS_FOR: Record<string, Tag[]> = {
   lead: ['Lead', 'Search', 'Stats'],
   email: ['Email', 'Lead', 'Stats'],
   product: ['Product'],
-  settings: ['Settings'],
+  settings: ['Settings', 'Stats'],
 };
 const ALL_TAGS: Tag[] = ['Product', 'Search', 'Lead', 'Email', 'Stats', 'Settings'];
 

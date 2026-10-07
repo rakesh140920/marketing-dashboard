@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Inbox, Package } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useGetEmailsQuery, useGetProductsQuery, useGetStatsQuery } from '../api/api';
 import { useLiveUpdates } from '../app/liveUpdates';
 import type { EmailStatus } from '../api/types';
@@ -48,6 +49,16 @@ export default function Outbox() {
           </span>
         )}
       </div>
+
+      {stats?.sending.testMode && (
+        <Banner kind={stats.sending.testEmails.length ? 'info' : 'warn'}>
+          <b>Test mode</b> —{' '}
+          {stats.sending.testEmails.length
+            ? `“Approve & send test” delivers to ${stats.sending.testEmails.join(', ')} only. The lead is not emailed.`
+            : 'add a test email address in Settings first, or turn test mode off.'}{' '}
+          <Link to="/settings">Settings →</Link>
+        </Banner>
+      )}
 
       {stats?.sending.dryRun && (
         <Banner kind="warn">

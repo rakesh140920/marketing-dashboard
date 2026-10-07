@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Check, ExternalLink, Save, Send, X } from 'lucide-react';
+import { Check, ExternalLink, FlaskConical, Save, Send, X } from 'lucide-react';
 import {
   errorMessage,
   useApproveEmailMutation,
+  useGetStatsQuery,
   useRejectEmailMutation,
   useUpdateEmailMutation,
 } from '../api/api';
@@ -32,6 +33,8 @@ export default function EmailEditor({ email }: { email: EmailMessage }) {
   const [reject, { isLoading: rejecting }] = useRejectEmailMutation();
 
   const lead = typeof email.leadId === 'object' ? email.leadId : null;
+  const { data: stats } = useGetStatsQuery();
+  const testMode = stats?.sending.testMode ?? false;
   const editable = ['draft', 'failed', 'rejected'].includes(email.status);
   const dirty = to !== (email.to ?? '') || subject !== email.subject || body !== email.body;
   const busy = saving || approving || rejecting;
@@ -112,7 +115,8 @@ export default function EmailEditor({ email }: { email: EmailMessage }) {
           </div>
           <div className="row">
             <button className="btn btn-primary" onClick={approveAndSend} disabled={busy || !to}>
-              <Send size={16} /> Approve &amp; send
+              {testMode ? <FlaskConical size={16} /> : <Send size={16} />}
+              {testMode ? 'Approve & send test' : 'Approve & send'}
             </button>
             <button className="btn" onClick={save} disabled={busy || !dirty}>
               <Save size={16} /> Save
@@ -141,6 +145,11 @@ export default function EmailEditor({ email }: { email: EmailMessage }) {
               <>
                 <Check size={14} className="ic-green" /> Sent {fmt(email.sentAt)}
                 {email.dryRun && <span className="badge tone-amber">Dry run — not actually delivered</span>}
+                {email.testMode && (
+                  <span className="badge tone-violet">
+                    <FlaskConical size={12} /> Test — delivered to {email.deliveredTo?.join(', ')}
+                  </span>
+                )}
               </>
             )}
             {email.status === 'approved' && <>Approved {fmt(email.approvedAt)} — waiting in the send queue</>}

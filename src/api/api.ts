@@ -112,7 +112,7 @@ export const api = createApi({
     }),
     updateSettings: b.mutation<AppSettings, Partial<AppSettings>>({
       query: (body) => ({ url: 'settings', method: 'PUT', body }),
-      invalidatesTags: ['Settings'],
+      invalidatesTags: ['Settings', 'Stats'],
     }),
   }),
 });

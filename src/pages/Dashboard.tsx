@@ -57,6 +57,16 @@ export default function Dashboard() {
         </Banner>
       )}
 
+      {sending.testMode && (
+        <Banner kind="info">
+          <b>Test mode is on</b> —{' '}
+          {sending.testEmails.length
+            ? `approved emails go only to ${sending.testEmails.join(', ')}, not to the leads.`
+            : 'add a test email address in Settings before approving emails.'}{' '}
+          <Link to="/settings">Settings →</Link>
+        </Banner>
+      )}
+
       <div className="grid grid-4">
         <Link to="/leads" className="panel stat">
           <div className="stat-label">

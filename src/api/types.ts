@@ -151,6 +151,8 @@ export interface EmailMessage {
   approvedAt?: string;
   sentAt?: string;
   dryRun?: boolean;
+  testMode?: boolean;
+  deliveredTo?: string[];
   error?: string;
   createdAt: string;
   updatedAt: string;
@@ -166,7 +168,14 @@ export interface Stats {
     sent: number;
   };
   emails: Record<EmailStatus, number>;
-  sending: { sentToday: number; dailyLimit: number; perMinute: number; dryRun: boolean };
+  sending: {
+    sentToday: number;
+    dailyLimit: number;
+    perMinute: number;
+    dryRun: boolean;
+    testMode: boolean;
+    testEmails: string[];
+  };
   config: { googlePlaces: boolean; ai: boolean; aiModel: string; smtp: boolean };
   qualifiedScore: number;
 }
@@ -176,4 +185,6 @@ export interface AppSettings {
   senderName: string;
   senderTitle: string;
   signature: string;
+  testMode: boolean;
+  testEmails: string[];
 }

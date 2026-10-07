@@ -1,10 +1,10 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Building, Package, Palette, PenLine, Server } from 'lucide-react';
+import { Building, FlaskConical, Package, Palette, PenLine, Plus, Server, X } from 'lucide-react';
 import { errorMessage, useGetSettingsQuery, useGetStatsQuery, useUpdateSettingsMutation } from '../api/api';
 import type { AppSettings } from '../api/types';
-import { Loading } from '../components/Feedback';
+import { Banner, Loading } from '../components/Feedback';
 import AppearancePicker from '../components/AppearancePicker';
 
 const EMPTY: AppSettings = {
@@ -12,7 +12,13 @@ const EMPTY: AppSettings = {
   senderName: '',
   senderTitle: '',
   signature: '',
+  testMode: true,
+  testEmails: [],
 };
+
+const MAX_TEST_EMAILS = 5;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+type TextField = 'companyName' | 'senderName' | 'senderTitle' | 'signature';
 
 function Status({ ok, label, detail }: { ok: boolean; label: string; detail: string }) {
   return (
@@ -34,6 +40,7 @@ export default function SettingsPage() {
   const { data: stats } = useGetStatsQuery();
   const [save, { isLoading: saving }] = useUpdateSettingsMutation();
   const [form, setForm] = useState<AppSettings>(EMPTY);
+  const [testEmail, setTestEmail] = useState('');
 
   useEffect(() => {
     if (data) setForm({ ...EMPTY, ...data });
@@ -41,7 +48,28 @@ export default function SettingsPage() {
 
   if (isLoading) return <Loading />;
 
-  const set = (k: keyof AppSettings) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set = (k: TextField) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const addTestEmail = () => {
+    const addr = testEmail.trim().toLowerCase();
+    if (!addr) return;
+    if (!EMAIL_RE.test(addr)) {
+      toast.error('That is not a valid email address');
+      return;
+    }
+    setForm((f) => (f.testEmails.includes(addr) ? f : { ...f, testEmails: [...f.testEmails, addr] }));
+    setTestEmail('');
+  };
+  const onTestEmailKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTestEmail();
+    }
+  };
+  const toggleTestMode = (on: boolean) => {
+    if (!on && !window.confirm('Turn off test mode? After saving, approved emails will be sent to the real leads.')) return;
+    setForm((f) => ({ ...f, testMode: on }));
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -121,6 +149,73 @@ export default function SettingsPage() {
                 onChange={set('signature')}
               />
             </div>
+          </div>
+
+          <div className="panel card stack">
+            <div className="card-title" style={{ marginBottom: 0 }}>
+              <FlaskConical size={18} /> Test mode
+            </div>
+            <label className="switch-row">
+              <input
+                type="checkbox"
+                className="switch"
+                checked={form.testMode}
+                onChange={(e) => toggleTestMode(e.target.checked)}
+              />
+              <div>
+                <div className="small bold">
+                  {form.testMode ? 'On — approved emails go only to the test addresses' : 'Off — approved emails go to the real leads'}
+                </div>
+                <div className="tiny muted">
+                  Test emails are really sent, marked [TEST], and say which lead they were meant for. Leads stay “Open”.
+                </div>
+              </div>
+            </label>
+            <div className="field">
+              <label htmlFor="test-email">Test email addresses</label>
+              <div className="row" style={{ flexWrap: 'nowrap', gap: 8 }}>
+                <input
+                  id="test-email"
+                  className="input"
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  onKeyDown={onTestEmailKey}
+                  placeholder="you@yourcompany.com"
+                  disabled={form.testEmails.length >= MAX_TEST_EMAILS}
+                />
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={addTestEmail}
+                  disabled={!testEmail.trim() || form.testEmails.length >= MAX_TEST_EMAILS}
+                >
+                  <Plus size={15} /> Add
+                </button>
+              </div>
+              {!!form.testEmails.length && (
+                <div className="chips">
+                  {form.testEmails.map((addr) => (
+                    <span key={addr} className="chip">
+                      {addr}
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm icon-btn"
+                        style={{ height: 20, width: 20 }}
+                        aria-label={`Remove ${addr}`}
+                        onClick={() => setForm((f) => ({ ...f, testEmails: f.testEmails.filter((x) => x !== addr) }))}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <span className="hint">Up to {MAX_TEST_EMAILS} addresses. Every test email goes to all of them.</span>
+            </div>
+            {form.testMode && !form.testEmails.length && (
+              <Banner kind="warn">Add at least one test address — approving emails is blocked until you do.</Banner>
+            )}
           </div>
 
           <div className="row">
